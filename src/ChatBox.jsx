@@ -5,11 +5,17 @@ function ChatBox() {
   const [input, setInput] = useState("");
 
   const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const userMessage = { role: "user", content: input };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+
     try {
       const response = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input }),
       });
 
       if (!response.ok) {
@@ -17,24 +23,26 @@ function ChatBox() {
       }
 
       const data = await response.json();
+      const assistantMessage = {
+        role: "assistant",
+        content: data.response || "✅ message sent!",
+      };
 
-      setMessages([
-        ...messages,
-        { role: "user", content: input },
-        { role: "assistant", content: "✅ message sent successfully!" } // temp message
-      ]);
-      setInput("");
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Chat error:", error);
-      alert("Something went wrong. Check the console for details.");
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "⚠️ error: could not send message" },
+      ]);
     }
   };
 
   return (
-    <div>
-      <div>
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>
+      <div style={{ marginBottom: "1rem" }}>
         {messages.map((msg, i) => (
-          <div key={i}>
+          <div key={i} style={{ margin: "0.5rem 0" }}>
             <b>{msg.role}:</b> {msg.content}
           </div>
         ))}
@@ -42,9 +50,12 @@ function ChatBox() {
       <input
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        placeholder="Type a message..."
+        placeholder="Type your message..."
+        style={{ width: "80%", padding: "0.5rem" }}
       />
-      <button onClick={sendMessage}>Send</button>
+      <button onClick={sendMessage} style={{ padding: "0.5rem 1rem", marginLeft: "0.5rem" }}>
+        Send
+      </button>
     </div>
   );
 }
