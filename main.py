@@ -5,37 +5,39 @@ import os
 
 app = FastAPI()
 
-# Allow all CORS for now (you can lock this down later)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, replace * with your Vercel frontend URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# POST endpoint to handle chat requests
-@app.post("/chat")
-async def chat(request: Request):
-    body = await request.json()
-    user_message = body.get("message", "")
+# Read OpenAI key from environment variable
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-    # Load OpenAI API key
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+@app.get("/")
+def root():
+    return {"message": "Backend running."}
+
+@app.post("/chat")
+async def chat(req: Request):
+    body = await req.json()
+    user_message = body.get("message")
 
     if not user_message:
-        return {"response": "⚠️ no message received."}
+        return {"error": "No message provided."}
 
     try:
         completion = openai.ChatCompletion.create(
-            model="gpt-4",  # or "gpt-3.5-turbo"
+            model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "you are a helpful assistant."},
+                {"role": "system", "content": "You are a helpful assistant."},
                 {"role": "user", "content": user_message}
             ]
         )
-        reply = completion.choices[0].message["content"]
-        return {"response": reply}
-    
+        return {"response": completion.choices[0].message.content.strip()}
+
     except Exception as e:
-        return {"response": f"⚠️ error: {str(e)}"}
+        return {"error": str(e)}
