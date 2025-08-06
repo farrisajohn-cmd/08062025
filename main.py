@@ -1,44 +1,43 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from openai import OpenAI
+import openai
 import os
 
 app = FastAPI()
 
-# Allow requests from frontend
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # You can restrict this later
+    allow_origins=["*"],  # For now, allow all
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Sanity check
 @app.get("/")
-def read_root():
+async def root():
     return {"message": "Backend running."}
 
 @app.post("/chat")
 async def chat(request: Request):
     data = await request.json()
-    message = data.get("message")
+    user_input = data.get("message")
 
-    if not message:
-        return {"response": "⚠️ No message provided."}
-
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    if not user_input:
+        return {"error": "No message provided."}
 
     try:
-        completion = client.chat.completions.create(
+        openai.api_key = os.getenv("OPENAI_API_KEY")
+
+        response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": message},
+                {"role": "user", "content": user_input}
             ]
         )
-        reply = completion.choices[0].message.content
-        return {"response": reply}
+
+        return {"response": response.choices[0].message["content"]}
+    
     except Exception as e:
-        print("❌ OpenAI error:", e)
-        return {"response": "⚠️ error: OpenAI request failed."}
+        return {"error": f"OpenAI error: {str(e)}"}
