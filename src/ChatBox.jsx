@@ -1,63 +1,63 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-function ChatBox() {
+const ChatBox = () => {
   const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
 
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: "user", content: input };
+    const userMessage = { sender: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
-    setInput("");
+    setInput('');
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: input }),
+      const res = await fetch('https://zero08062025.onrender.com/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: input })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      if (!res.ok) throw new Error('Response not OK');
 
-      const data = await response.json();
-      const assistantMessage = {
-        role: "assistant",
-        content: data.response || "✅ message sent!",
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error("Chat error:", error);
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ error: could not send message" },
-      ]);
+      const data = await res.json();
+      const botMessage = { sender: 'assistant', text: data.response };
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (err) {
+      console.error('❌ Error sending message:', err);
+      const errorMsg = { sender: 'assistant', text: '⚠️ error: could not send message' };
+      setMessages((prev) => [...prev, errorMsg]);
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') sendMessage();
+  };
+
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>
-      <div style={{ marginBottom: "1rem" }}>
+    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
+      <div style={{ marginBottom: '10px' }}>
         {messages.map((msg, i) => (
-          <div key={i} style={{ margin: "0.5rem 0" }}>
-            <b>{msg.role}:</b> {msg.content}
+          <div key={i}>
+            <strong>{msg.sender}:</strong> {msg.text}
           </div>
         ))}
       </div>
       <input
+        type="text"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
         placeholder="Type your message..."
-        style={{ width: "80%", padding: "0.5rem" }}
+        onChange={(e) => setInput(e.target.value)}
+        onKeyPress={handleKeyPress}
+        style={{ padding: '8px', width: '300px' }}
       />
-      <button onClick={sendMessage} style={{ padding: "0.5rem 1rem", marginLeft: "0.5rem" }}>
+      <button onClick={sendMessage} style={{ marginLeft: '10px', padding: '8px' }}>
         Send
       </button>
     </div>
   );
-}
+};
 
 export default ChatBox;
