@@ -46,8 +46,8 @@ const ChatBox = () => {
     setInput('');
     setIsTyping(true);
 
-    const assistantMessage = { sender: 'assistant', text: '' };
-    setMessages(prev => [...prev, assistantMessage]);
+    // Initialize empty assistant message for streaming
+    setMessages(prev => [...prev, { sender: 'assistant', text: '' }]);
 
     try {
       const res = await fetch('https://zero8062025.onrender.com/chat', {
@@ -56,27 +56,105 @@ const ChatBox = () => {
         body: JSON.stringify({ message: input }),
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
       const reader = res.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let done = false;
-      let currentText = '';
+      let fullText = '';
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
         done = doneReading;
+
         if (value) {
-          const chunk = decoder.decode(value, { stream: true });
-          currentText += chunk;
+          const chunk = decoder.decode(value);
+          fullText += chunk;
 
           setMessages(prev => {
             const updated = [...prev];
             updated[updated.length - 1] = {
               sender: 'assistant',
-              text: currentText,
+              text: fullText
             };
             return updated;
-          })
+          });
+        }
+      }
+    } catch (err) {
+      console.error('streaming error:', err);
+      setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') sendMessage();
+  };
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      maxWidth: '600px',
+      margin: '0 auto',
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
+        marginBottom: '10px',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {messages.map(renderMessage)}
+        {isTyping && (
+          <div style={{
+            alignSelf: 'flex-start',
+            padding: '10px',
+            backgroundColor: '#444',
+            borderRadius: '10px',
+            margin: '5px',
+            maxWidth: '80%',
+            fontStyle: 'italic',
+            color: '#ccc'
+          }}>
+            typing...
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex' }}>
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="Type your message..."
+          style={{
+            flex: 1,
+            padding: '10px',
+            borderRadius: '5px',
+            border: '1px solid #ccc'
+          }}
+        />
+        <button
+          onClick={sendMessage}
+          style={{
+            marginLeft: '10px',
+            padding: '10px',
+            backgroundColor: '#179942',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          send
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default ChatBox;
