@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatBox.css';
-import avatar from './govies-avatar.png';
 
 export default function ChatBox() {
   const [messages, setMessages] = useState([
@@ -47,7 +46,7 @@ export default function ChatBox() {
   return (
     <div className="chatbox-container">
       <div className="chatbox-header">
-        <img src={avatar} alt="govies.com team" className="chatbox-avatar" />
+        <img src="/govies-avatar.png" alt="govies.com team" className="chatbox-avatar" />
         <span className="chatbox-title">govies.com team</span>
         <div className="chatbox-buttons">
           <button onClick={() => window.location.reload()}>⟲</button>
@@ -58,13 +57,13 @@ export default function ChatBox() {
       <div className="chatbox-messages">
         {messages.map((msg, index) => (
           <div key={index} className={`chatbox-message ${msg.sender}`}>
-            {msg.sender === 'bot' && <img src={avatar} className="chatbox-avatar-small" alt="bot" />}
+            {msg.sender === 'bot' && <img src="/govies-avatar.png" className="chatbox-avatar-small" alt="bot" />}
             <div className="chatbox-bubble">{msg.text}</div>
           </div>
         ))}
         {isTyping && (
           <div className="chatbox-message bot">
-            <img src={avatar} className="chatbox-avatar-small" alt="bot" />
+            <img src="/govies-avatar.png" className="chatbox-avatar-small" alt="bot" />
             <div className="chatbox-bubble typing">
               <span className="dot"></span><span className="dot"></span><span className="dot"></span>
             </div>
