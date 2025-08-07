@@ -1,108 +1,129 @@
-import React, { useState, useEffect, useRef } from 'react';
-import './ChatBox.css';
+.chatbox-container {
+  width: 350px;
+  height: 500px;
+  position: fixed;
+  bottom: 100px;
+  left: 30px;
+  background-color: #1c1c1c;
+  color: #fff;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: 'Helvetica Neue', sans-serif;
+  z-index: 9999;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+}
 
-const ChatBox = () => {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'bot',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+.chatbox-header {
+  background-color: #1c1c1c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #333;
+}
 
-  const avatar = '/govies-avatar.png'; // public folder path
+.header-left {
+  display: flex;
+  align-items: center;
+}
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+.chatbot-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+.chatbot-name {
+  font-weight: bold;
+  font-size: 14px;
+}
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+.header-right .chatbox-icon {
+  background: none;
+  color: #ccc;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 8px;
+}
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setIsTyping(true);
+.chatbox-messages {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  background-color: #121212;
+}
 
-    const response = await fetch('https://zero8062025.onrender.com/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input }),
-    });
+.message {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 14px;
+  font-size: 14px;
+}
 
-    const data = await response.json();
-    const botMessage = { sender: 'bot', text: data.response };
-    
-    setTimeout(() => {
-      setMessages(prev => [...prev, botMessage]);
-      setIsTyping(false);
-    }, 3000);
-  };
+.message.user {
+  justify-content: flex-end;
+}
 
-  const handleKeyPress = e => {
-    if (e.key === 'Enter') handleSend();
-  };
+.message.bot {
+  justify-content: flex-start;
+}
 
-  const clearChat = () => {
-    setMessages([
-      {
-        sender: 'bot',
-        text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
-      },
-    ]);
-  };
+.message .avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
 
-  return (
-    <div className="chatbox-container">
-      <div className="chatbox-header">
-        <div className="header-left">
-          <img src={avatar} alt="govies.com team" className="chatbot-avatar" />
-          <span className="chatbot-name">govies.com team</span>
-        </div>
-        <div className="header-right">
-          <button onClick={clearChat} className="chatbox-icon">⟲</button>
-          <button className="chatbox-icon">✕</button>
-        </div>
-      </div>
+.message.user .message-text {
+  background-color: #1a8c5f;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 14px 14px 0 14px;
+  max-width: 75%;
+}
 
-      <div className="chatbox-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.sender}`}>
-            {msg.sender === 'bot' && (
-              <img src={avatar} alt="bot" className="avatar" />
-            )}
-            <div className="message-text">{msg.text}</div>
-          </div>
-        ))}
+.message.bot .message-text {
+  background-color: #2a2a2a;
+  padding: 10px 14px;
+  border-radius: 14px 14px 14px 0;
+  max-width: 75%;
+  color: #eaeaea;
+}
 
-        {isTyping && (
-          <div className="message bot">
-            <img src={avatar} alt="bot" className="avatar" />
-            <div className="message-text">typing...</div>
-          </div>
-        )}
+.chatbox-input {
+  display: flex;
+  padding: 12px;
+  border-top: 1px solid #333;
+  background-color: #1c1c1c;
+}
 
-        <div ref={messagesEndRef} />
-      </div>
+.chatbox-input input {
+  flex: 1;
+  padding: 10px;
+  background-color: #2a2a2a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  margin-right: 8px;
+  font-size: 14px;
+}
 
-      <div className="chatbox-input">
-        <input
-          type="text"
-          placeholder="Type your question..."
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
-        />
-        <button onClick={handleSend}>Send</button>
-      </div>
-    </div>
-  );
-};
+.chatbox-input button {
+  padding: 10px 16px;
+  background-color: #179942;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
 
-export default ChatBox;
+.chatbox-input input:focus {
+  outline: none;
+}
