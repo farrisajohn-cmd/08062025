@@ -1,88 +1,72 @@
 import React, { useState } from 'react';
 import './ChatBox.css';
+import avatar from '../public/govies-avatar.png';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'assistant',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!"
-    }
+      text: "hi there! how can i assist you with your FHA loan today? if you’re looking to get a quote, just let me know the estimated purchase price of the home you’re interested in. 😊",
+    },
   ]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
 
-  const sendMessage = async () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
 
     const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
-    setIsTyping(true);
 
     try {
-      const res = await fetch('https://zero8062025.onrender.com/chat', {
+      const response = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input }),
       });
 
-      const data = await res.json();
-      const assistantMessage = { sender: 'assistant', text: data.response };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (err) {
-      setMessages(prev => [...prev, {
+      const data = await response.json();
+
+      const botMessage = {
         sender: 'assistant',
-        text: '⚠️ something went wrong. try again!'
-      }]);
-    } finally {
-      setIsTyping(false);
+        text: data.response,
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch (error) {
+      console.error('Error:', error);
     }
   };
 
   const handleKeyPress = (e) => {
-    if (e.key === 'Enter') sendMessage();
-  };
-
-  const renderMessage = (msg, i) => {
-    const isUser = msg.sender === 'user';
-    return (
-      <div className={`message-row ${isUser ? 'user' : 'assistant'}`} key={i}>
-        {!isUser && (
-          <img src="/govies-avatar.png" alt="govies" className="avatar" />
-        )}
-        <div className={`bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}`}>
-          <div className="sender-name">{isUser ? 'You' : 'govies.com team'}</div>
-          <div className="message-text">{msg.text}</div>
-        </div>
-      </div>
-    );
+    if (e.key === 'Enter') handleSend();
   };
 
   return (
-    <div className="chatbox-container">
-      <div className="messages-container">
-        {messages.map(renderMessage)}
-        {isTyping && (
-          <div className="message-row assistant">
-            <img src="/govies-avatar.png" alt="govies" className="avatar" />
-            <div className="bubble assistant-bubble">
+    <div className="chat-container">
+      {messages.map((msg, index) => (
+        <div key={index} className={`message ${msg.sender}`}>
+          {msg.sender === 'assistant' && (
+            <img src={avatar} alt="govies.com team" className="avatar" />
+          )}
+          <div>
+            {msg.sender === 'assistant' && (
               <div className="sender-name">govies.com team</div>
-              <div className="typing-indicator">
-                <span></span><span></span><span></span>
-              </div>
-            </div>
+            )}
+            <div className="message-bubble">{msg.text}</div>
           </div>
-        )}
-      </div>
+        </div>
+      ))}
+
       <div className="input-container">
         <input
           type="text"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyPress={handleKeyPress}
           placeholder="Type your message..."
         />
-        <button onClick={sendMessage}>Send</button>
+        <button onClick={handleSend}>send</button>
       </div>
     </div>
   );
