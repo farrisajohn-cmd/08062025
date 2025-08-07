@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './ChatBox.css'; // make sure to create this file (next step)
+import './ChatBox.css';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([
@@ -43,39 +43,38 @@ const ChatBox = () => {
     if (e.key === 'Enter') sendMessage();
   };
 
+  const renderMessage = (msg, i) => {
+    const isUser = msg.sender === 'user';
+    return (
+      <div className={`message-row ${isUser ? 'user' : 'assistant'}`} key={i}>
+        {!isUser && (
+          <img src="/govies-avatar.png" alt="govies" className="avatar" />
+        )}
+        <div className={`bubble ${isUser ? 'user-bubble' : 'assistant-bubble'}`}>
+          <div className="sender-name">{isUser ? 'You' : 'govies.com team'}</div>
+          <div className="message-text">{msg.text}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="chat-container">
-      <div className="chat-messages">
-        {messages.map((msg, i) => {
-          const isUser = msg.sender === 'user';
-          return (
-            <div key={i} className={`chat-bubble ${isUser ? 'user' : 'assistant'}`}>
-              {!isUser && (
-                <img
-                  src="/govies-avatar.png"
-                  alt="govies.com team"
-                  className="avatar"
-                />
-              )}
-              <div className="message-content">
-                <div className="sender-name">
-                  {isUser ? 'You' : 'Govies.com Team'}
-                </div>
-                <div className="message-text">{msg.text}</div>
-              </div>
-            </div>
-          );
-        })}
+    <div className="chatbox-container">
+      <div className="messages-container">
+        {messages.map(renderMessage)}
         {isTyping && (
-          <div className="chat-bubble assistant typing">
-            <img src="/govies-avatar.png" alt="govies.com team" className="avatar" />
-            <div className="typing-indicator">
-              <span></span><span></span><span></span>
+          <div className="message-row assistant">
+            <img src="/govies-avatar.png" alt="govies" className="avatar" />
+            <div className="bubble assistant-bubble">
+              <div className="sender-name">govies.com team</div>
+              <div className="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
             </div>
           </div>
         )}
       </div>
-      <div className="chat-input">
+      <div className="input-container">
         <input
           type="text"
           value={input}
