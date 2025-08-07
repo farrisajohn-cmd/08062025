@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([
@@ -13,10 +13,9 @@ const ChatBox = () => {
   const renderMessage = (msg, i) => {
     const isUser = msg.sender === 'user';
 
-    // Bold section headers
     const formattedText = msg.text
-      .replace(/(\*\*box [a-g][^*]*\*\*)/gi, '<strong>$1</strong>')
-      .replace(/(\*\*calculating cash to close\*\*)/gi, '<strong>$1</strong>')
+      .replace(/\*\*(box [a-g][^*]*)\*\*/gi, '<strong>$1</strong>')
+      .replace(/\*\*(calculating cash to close)\*\*/gi, '<strong>$1</strong>')
       .replace(/\n\n/g, '<br/><br/>');
 
     return (
@@ -80,32 +79,4 @@ const ChatBox = () => {
               text: currentText,
             };
             return updated;
-          });
-        }
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') sendMessage();
-  };
-
-  return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      maxWidth: '600px',
-      margin: '0 auto',
-      padding: '20px',
-      fontFamily: 'Arial, sans-serif'
-    }}>
-      <div style={{ flex: 1, overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column' }}>
-        {messages.map(renderMessage)}
-        {isTyping && (
-          <div style={{
+          })
