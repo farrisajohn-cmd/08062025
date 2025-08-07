@@ -1,88 +1,93 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './ChatBox.css';
+import avatar from '../public/govies-avatar.png';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([
     {
-      sender: 'assistant',
+      sender: 'bot',
       text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
     },
   ]);
   const [input, setInput] = useState('');
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const chatEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isOpen]);
 
-  useEffect(scrollToBottom, [messages, isTyping]);
-
-  const sendMessage = async () => {
+  const handleSend = async () => {
     if (!input.trim()) return;
-    const newMessages = [...messages, { sender: 'user', text: input }];
-    setMessages(newMessages);
+    const userMessage = { sender: 'user', text: input };
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
     try {
-      const response = await fetch('https://zero8062025.onrender.com/chat', {
+      const res = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input }),
       });
 
-      const data = await response.json();
-      const reply = data.response || "sorry, something went wrong.";
-      setMessages([...newMessages, { sender: 'assistant', text: reply }]);
-    } catch {
-      setMessages([...newMessages, { sender: 'assistant', text: 'error contacting server.' }]);
-    } finally {
+      const data = await res.json();
+      const delay = Math.max(3000, data.text.length * 15);
+      setTimeout(() => {
+        setMessages((prev) => [...prev, { sender: 'bot', text: data.text }]);
+        setIsTyping(false);
+      }, delay);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'bot', text: "sorry, something went wrong." },
+      ]);
       setIsTyping(false);
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter') sendMessage();
+    if (e.key === 'Enter') handleSend();
   };
 
-  const clearMessages = () => {
+  const toggleChat = () => setIsOpen(!isOpen);
+  const clearChat = () => {
     setMessages([
       {
-        sender: 'assistant',
+        sender: 'bot',
         text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
       },
     ]);
+    setInput('');
   };
 
   return (
     <div className="chat-widget">
       {isOpen ? (
-        <div className="chatbox-container">
-          <div className="chatbox-header">
-            <div className="chatbox-header-left">
-              <img src="/govies-avatar.png" alt="avatar" className="chat-avatar" />
-              <span className="chatbox-title">govies.com team</span>
+        <div className="chat-box">
+          <div className="chat-header">
+            <div className="header-left">
+              <img src={avatar} alt="govies avatar" className="chat-avatar" />
+              <span className="chat-title">govies.com team</span>
             </div>
-            <div className="chatbox-header-buttons">
-              <button onClick={clearMessages}>⟲</button>
-              <button onClick={() => setIsOpen(false)}>✕</button>
+            <div className="header-right">
+              <button onClick={clearChat}>⟲</button>
+              <button onClick={toggleChat}>✕</button>
             </div>
           </div>
-          <div className="chatbox-messages">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`chat-message ${msg.sender === 'assistant' ? 'assistant' : 'user'}`}
-              >
+          <div className="chat-messages">
+            {messages.map((msg, idx) => (
+              <div key={idx} className={`chat-message ${msg.sender}`}>
                 {msg.text}
               </div>
             ))}
-            {isTyping && <div className="chat-message assistant">typing...</div>}
-            <div ref={messagesEndRef} />
+            {isTyping && <div className="typing-indicator">typing...</div>}
+            <div ref={chatEndRef} />
           </div>
-          <div className="chatbox-input">
+          <div className="chat-input">
             <input
               type="text"
               placeholder="Type your question..."
@@ -90,13 +95,13 @@ const ChatBox = () => {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
             />
-            <button onClick={sendMessage}>Send</button>
+            <button onClick={handleSend}>Send</button>
           </div>
         </div>
       ) : (
-        <div className="chatbox-closed" onClick={() => setIsOpen(true)}>
+        <button className="chat-toggle" onClick={toggleChat}>
           💬
-        </div>
+        </button>
       )}
     </div>
   );
