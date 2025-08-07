@@ -1,41 +1,41 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from openai import OpenAI
 import os
-import openai
 
-# Set OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
-# Define request schema
-class ChatRequest(BaseModel):
-    message: str
-
-# Initialize app
 app = FastAPI()
 
-# Enable CORS for frontend on Vercel
+# Allow CORS from anywhere (for dev)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace with ["https://your-vercel-url.vercel.app"] in prod
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 @app.get("/")
-def read_root():
+def root():
     return {"message": "Backend running."}
 
 @app.post("/chat")
-async def chat_endpoint(req: ChatRequest):
+async def chat(request: Request):
+    body = await request.json()
+    prompt = body.get("message")
+
+    if not prompt:
+        return {"error": "No message provided."}
+
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+        response = client.chat.completions.create(
+            model="gpt-4",
             messages=[
-                {"role": "user", "content": req.message}
+                {"role": "system", "content": "You are a helpful FHA mortgage assistant."},
+                {"role": "user", "content": prompt}
             ]
         )
-        return {"response": response.choices[0].message["content"]}
+        return {"response": response.choices[0].message.content.strip()}
     except Exception as e:
-        return {"response": f"Error: {str(e)}"}
+        return {"error": str(e)}
