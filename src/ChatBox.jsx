@@ -1,106 +1,103 @@
-import React, { useState, useEffect } from 'react';
-import './ChatBox.css';
+import React, { useState, useEffect, useRef } from "react";
+import "./ChatBox.css";
 
 const ChatBox = () => {
-  const [messages, setMessages] = useState([]);
-  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([
+    {
+      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
+      sender: "bot",
+    },
+  ]);
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [initialGreeting, setInitialGreeting] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
-
-  useEffect(() => {
-    if (!initialGreeting) {
-      setInitialGreeting(true);
-      simulateAssistantMessage("hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!");
-    }
-  }, [initialGreeting]);
-
-  const simulateAssistantMessage = async (text) => {
-    setIsTyping(true);
-    await delay(3000); // min 3s delay
-    setMessages(prev => [...prev, { sender: 'assistant', text }]);
-    setIsTyping(false);
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  const sendMessage = async () => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping]);
+
+  const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
+    const userMessage = { text: input, sender: "user" };
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
     setIsTyping(true);
 
     try {
-      const res = await fetch('https://zero8062025.onrender.com/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input })
+      const response = await fetch("https://zero8062025.onrender.com/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input }),
       });
 
-      const data = await res.json();
-      await delay(3000); // min 3s delay
-      const assistantMessage = { sender: 'assistant', text: data.response };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (err) {
-      setMessages(prev => [...prev, {
-        sender: 'assistant',
-        text: '⚠️ something went wrong. try again!'
-      }]);
-    } finally {
+      const data = await response.json();
+      const botMessage = { text: data.response, sender: "bot" };
+
+      setTimeout(() => {
+        setMessages((prev) => [...prev, botMessage]);
+        setIsTyping(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Chat error:", error);
       setIsTyping(false);
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') sendMessage();
-  };
-
-  const renderMessage = (msg, index) => {
-    const isUser = msg.sender === 'user';
-    const className = isUser ? 'user-message' : 'assistant-message';
-
-    return (
-      <div key={index} className={`message-row ${isUser ? 'user' : 'assistant'}`}>
-        {!isUser && (
-          <img src="/govies-avatar.png" alt="govies avatar" className="avatar" />
-        )}
-        <div className={`message-bubble ${className}`}>
-          {!isUser && <div className="sender-name">govies.com team</div>}
-          <div className="message-text">{msg.text}</div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="chat-container">
-      <div className="message-container">
-        {messages.map(renderMessage)}
-        {isTyping && (
-          <div className="message-row assistant">
-            <img src="/govies-avatar.png" alt="govies avatar" className="avatar" />
-            <div className="message-bubble assistant-message">
-              <div className="sender-name">govies.com team</div>
-              <div className="typing-dots">
-                <span className="dot"></span>
-                <span className="dot"></span>
-                <span className="dot"></span>
-              </div>
-            </div>
+    <div className={`chatbox-container ${isOpen ? "open" : ""}`}>
+      {!isOpen && (
+        <div className="chatbox-toggle" onClick={() => setIsOpen(true)}>
+          <img src="/govies-avatar.png" alt="govies.com team" />
+        </div>
+      )}
+      {isOpen && (
+        <div className="chatbox">
+          <div className="chatbox-header">
+            <img src="/govies-avatar.png" alt="govies.com team" />
+            <span className="bot-name">govies.com team</span>
           </div>
-        )}
-      </div>
-      <div className="input-row">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="type your message..."
-        />
-        <button onClick={sendMessage}>send</button>
-      </div>
+          <div className="chatbox-messages">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`chat-message ${msg.sender === "user" ? "user" : "bot"}`}
+              >
+                {msg.sender === "bot" && (
+                  <img className="avatar" src="/govies-avatar.png" alt="govies.com team" />
+                )}
+                <div className="message-text">{msg.text}</div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="chat-message bot">
+                <img className="avatar" src="/govies-avatar.png" alt="govies.com team" />
+                <div className="typing">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+          <div className="chatbox-input">
+            <input
+              type="text"
+              placeholder="type your message..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            />
+            <button onClick={handleSend}>send</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
