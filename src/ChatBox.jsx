@@ -1,17 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import './ChatBox.css';
 
 const ChatBox = () => {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'assistant',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!"
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [currentReply, setCurrentReply] = useState('');
-  const replyIntervalRef = useRef(null);
+  const [initialGreeting, setInitialGreeting] = useState(false);
+
+  const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
+  useEffect(() => {
+    if (!initialGreeting) {
+      setInitialGreeting(true);
+      simulateAssistantMessage("hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!");
+    }
+  }, [initialGreeting]);
+
+  const simulateAssistantMessage = async (text) => {
+    setIsTyping(true);
+    await delay(3000); // min 3s delay
+    setMessages(prev => [...prev, { sender: 'assistant', text }]);
+    setIsTyping(false);
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -29,29 +39,15 @@ const ChatBox = () => {
       });
 
       const data = await res.json();
-      const fullReply = data.response || '⚠️ assistant failed to respond.';
-      
-      // simulate realistic typing animation
-      let index = 0;
-      setCurrentReply('');
-      const delayStart = Date.now();
-      
-      replyIntervalRef.current = setInterval(() => {
-        const now = Date.now();
-        if (now - delayStart >= 3000) {
-          setCurrentReply(fullReply.slice(0, index));
-          index++;
-          if (index > fullReply.length) {
-            clearInterval(replyIntervalRef.current);
-            setMessages(prev => [...prev, { sender: 'assistant', text: fullReply }]);
-            setCurrentReply('');
-            setIsTyping(false);
-          }
-        }
-      }, 15);
-
+      await delay(3000); // min 3s delay
+      const assistantMessage = { sender: 'assistant', text: data.response };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
-      setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
+      setMessages(prev => [...prev, {
+        sender: 'assistant',
+        text: '⚠️ something went wrong. try again!'
+      }]);
+    } finally {
       setIsTyping(false);
     }
   };
@@ -60,58 +56,50 @@ const ChatBox = () => {
     if (e.key === 'Enter') sendMessage();
   };
 
+  const renderMessage = (msg, index) => {
+    const isUser = msg.sender === 'user';
+    const className = isUser ? 'user-message' : 'assistant-message';
+
+    return (
+      <div key={index} className={`message-row ${isUser ? 'user' : 'assistant'}`}>
+        {!isUser && (
+          <img src="/govies-avatar.png" alt="govies avatar" className="avatar" />
+        )}
+        <div className={`message-bubble ${className}`}>
+          {!isUser && <div className="sender-name">govies.com team</div>}
+          <div className="message-text">{msg.text}</div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="chat-widget-container">
-      <div className="chat-box">
-        <div className="chat-messages">
-          {messages.map((msg, i) => (
-            <div key={i} className={`chat-bubble ${msg.sender}`}>
-              {msg.sender === 'assistant' && (
-                <img src="/govies-avatar.png" alt="govies.com team" className="chat-avatar" />
-              )}
-              <div className="chat-content">
-                <span className="chat-sender">
-                  {msg.sender === 'assistant' ? 'govies.com team' : 'you'}
-                </span>
-                <div className="chat-text">{msg.text}</div>
+    <div className="chat-container">
+      <div className="message-container">
+        {messages.map(renderMessage)}
+        {isTyping && (
+          <div className="message-row assistant">
+            <img src="/govies-avatar.png" alt="govies avatar" className="avatar" />
+            <div className="message-bubble assistant-message">
+              <div className="sender-name">govies.com team</div>
+              <div className="typing-dots">
+                <span className="dot"></span>
+                <span className="dot"></span>
+                <span className="dot"></span>
               </div>
             </div>
-          ))}
-
-          {currentReply && (
-            <div className="chat-bubble assistant">
-              <img src="/govies-avatar.png" alt="govies.com team" className="chat-avatar" />
-              <div className="chat-content">
-                <span className="chat-sender">govies.com team</span>
-                <div className="chat-text">{currentReply}</div>
-              </div>
-            </div>
-          )}
-
-          {isTyping && !currentReply && (
-            <div className="chat-bubble assistant">
-              <img src="/govies-avatar.png" alt="govies.com team" className="chat-avatar" />
-              <div className="chat-content typing">
-                <span className="chat-sender">govies.com team</span>
-                <div className="typing-dots">
-                  <span></span><span></span><span></span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="chat-input-area">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="type your message..."
-            className="chat-input"
-          />
-          <button onClick={sendMessage} className="chat-send-btn">send</button>
-        </div>
+          </div>
+        )}
+      </div>
+      <div className="input-row">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="type your message..."
+        />
+        <button onClick={sendMessage}>send</button>
       </div>
     </div>
   );
