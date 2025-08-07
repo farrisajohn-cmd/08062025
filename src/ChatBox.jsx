@@ -1,25 +1,18 @@
 import React, { useState } from 'react';
-import ReactMarkdown from 'react-markdown';
 import './ChatBox.css';
-import avatar from './assets/govies-avatar.png'; // Make sure this is inside src/assets/
 
 function ChatBox() {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "👋 hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    const userMessage = { role: 'user', content: input };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    const userMessage = { sender: 'user', text: input };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
-    setIsTyping(true);
+    setIsLoading(true);
 
     try {
       const res = await fetch('https://zero8062025.onrender.com/chat', {
@@ -29,57 +22,68 @@ function ChatBox() {
       });
 
       const data = await res.json();
-
-      setTimeout(() => {
-        const assistantMessage = {
-          role: 'assistant',
-          content: data.response,
-        };
-        setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-        setIsTyping(false);
-      }, 1500); // typing delay
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setIsTyping(false);
+      const botMessage = { sender: 'bot', text: data.response };
+      setMessages(prev => [...prev, botMessage]);
+    } catch (err) {
+      setMessages(prev => [...prev, { sender: 'bot', text: 'error fetching response' }]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyPress = e => {
     if (e.key === 'Enter') handleSend();
   };
 
-  const TypingIndicator = () => (
-    <div className="message assistant typing">
-      <img src={avatar} alt="govies.com team" className="avatar" />
-      <div className="typing-dots">
-        <span></span><span></span><span></span>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="chat-container">
-      <div className="chat-messages">
+    <div className="chatbox-container">
+      <div className="chat-window">
         {messages.map((msg, i) => (
-          <div key={i} className={`message ${msg.role}`}>
-            {msg.role === 'assistant' && <img src={avatar} alt="govies.com team" className="avatar" />}
-            <div className="bubble">
-              {msg.role === 'assistant' && <div className="name">govies.com team</div>}
-              <ReactMarkdown>{msg.content}</ReactMarkdown>
+          <div
+            key={i}
+            className={`chat-bubble ${msg.sender === 'user' ? 'user' : 'bot'}`}
+          >
+            {msg.sender === 'bot' && (
+              <img
+                src="/govies-avatar.png"
+                alt="govies.com team"
+                className="avatar"
+              />
+            )}
+            <div className="message-content">
+              {msg.sender === 'bot' && (
+                <div className="sender-name">govies.com team</div>
+              )}
+              {msg.text}
             </div>
           </div>
         ))}
-        {isTyping && <TypingIndicator />}
+        {isLoading && (
+          <div className="chat-bubble bot">
+            <img
+              src="/govies-avatar.png"
+              alt="govies.com team"
+              className="avatar"
+            />
+            <div className="message-content">
+              <div className="sender-name">govies.com team</div>
+              <div className="typing-indicator">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-      <div className="chat-input">
+
+      <div className="input-row">
         <input
           type="text"
-          placeholder="Type your message..."
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
+          placeholder="Type your message..."
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
         />
-        <button onClick={handleSend}>send</button>
+        <button onClick={handleSend}>Send</button>
       </div>
     </div>
   );
