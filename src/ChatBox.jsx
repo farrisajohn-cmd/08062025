@@ -1,34 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const ChatBox = () => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+    {
+      sender: 'assistant',
+      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!"
+    }
+  ]);
   const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+
+  const renderMessage = (msg, i) => {
+    const isUser = msg.sender === 'user';
+    return (
+      <div key={i} style={{
+        alignSelf: isUser ? 'flex-end' : 'flex-start',
+        backgroundColor: isUser ? '#DCF8C6' : '#FFF',
+        color: '#000',
+        padding: '10px',
+        borderRadius: '10px',
+        margin: '5px',
+        maxWidth: '80%',
+        whiteSpace: 'pre-wrap',
+        fontWeight: /box [a-g]/i.test(msg.text) || /cash to close/i.test(msg.text) ? 'bold' : 'normal'
+      }}>
+        <strong>{isUser ? 'You' : 'Govies'}:</strong> {msg.text}
+      </div>
+    );
+  };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     const userMessage = { sender: 'user', text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setIsTyping(true);
 
     try {
       const res = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: input }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: input })
       });
 
-      if (!res.ok) throw new Error('Response not OK');
-
       const data = await res.json();
-      const botMessage = { sender: 'assistant', text: data.response };
-      setMessages((prev) => [...prev, botMessage]);
+      const assistantMessage = { sender: 'assistant', text: data.response };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (err) {
-      console.error('❌ Error sending message:', err);
-      const errorMsg = { sender: 'assistant', text: '⚠️ error: could not send message' };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
+    } finally {
+      setIsTyping(false);
     }
   };
 
@@ -37,25 +58,45 @@ const ChatBox = () => {
   };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial' }}>
-      <div style={{ marginBottom: '10px' }}>
-        {messages.map((msg, i) => (
-          <div key={i}>
-            <strong>{msg.sender}:</strong> {msg.text}
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      maxWidth: '600px',
+      margin: '0 auto',
+      padding: '20px',
+      fontFamily: 'Arial, sans-serif'
+    }}>
+      <div style={{ flex: 1, overflowY: 'auto', marginBottom: '10px', display: 'flex', flexDirection: 'column' }}>
+        {messages.map(renderMessage)}
+        {isTyping && (
+          <div style={{
+            alignSelf: 'flex-start',
+            padding: '10px',
+            backgroundColor: '#FFF',
+            borderRadius: '10px',
+            margin: '5px',
+            maxWidth: '80%',
+            fontStyle: 'italic',
+            opacity: 0.6
+          }}>
+            Govies is typing...
           </div>
-        ))}
+        )}
       </div>
-      <input
-        type="text"
-        value={input}
-        placeholder="Type your message..."
-        onChange={(e) => setInput(e.target.value)}
-        onKeyPress={handleKeyPress}
-        style={{ padding: '8px', width: '300px' }}
-      />
-      <button onClick={sendMessage} style={{ marginLeft: '10px', padding: '8px' }}>
-        Send
-      </button>
+      <div style={{ display: 'flex' }}>
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="Type your message..."
+          style={{ flex: 1, padding: '10px', borderRadius: '5px' }}
+        />
+        <button onClick={sendMessage} style={{ marginLeft: '10px', padding: '10px' }}>
+          Send
+        </button>
+      </div>
     </div>
   );
 };
