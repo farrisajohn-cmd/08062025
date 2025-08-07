@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const ChatBox = () => {
   const [messages, setMessages] = useState([
@@ -9,79 +9,51 @@ const ChatBox = () => {
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
 
-  const renderMessage = (msg, i) => {
-    const isUser = msg.sender === 'user';
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
-    const formattedText = msg.text
-      .replace(/\*\*(box [a-g][^*]*)\*\*/gi, '<strong>$1</strong>')
-      .replace(/\*\*(calculating cash to close)\*\*/gi, '<strong>$1</strong>')
-      .replace(/\n\n/g, '<br/><br/>');
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
-    return (
-      <div
-        key={i}
-        style={{
-          alignSelf: isUser ? 'flex-end' : 'flex-start',
-          backgroundColor: isUser ? '#444' : '#222',
-          color: '#fff',
-          padding: '10px',
-          borderRadius: '10px',
-          margin: '5px',
-          maxWidth: '80%',
-          whiteSpace: 'pre-wrap'
-        }}
-        dangerouslySetInnerHTML={{
-          __html: `<strong>${isUser ? 'you' : 'govies'}:</strong> ${formattedText}`
-        }}
-      />
-    );
+  const streamAssistantMessage = async (text) => {
+    const delay = 15;
+    let currentText = '';
+    for (let i = 0; i < text.length; i++) {
+      currentText += text[i];
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { sender: 'assistant', text: currentText }
+      ]);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     const userMessage = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
-
-    // Initialize empty assistant message for streaming
     setMessages(prev => [...prev, { sender: 'assistant', text: '' }]);
 
     try {
       const res = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: input })
       });
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder('utf-8');
-      let done = false;
-      let fullText = '';
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-
-        if (value) {
-          const chunk = decoder.decode(value);
-          fullText += chunk;
-
-          setMessages(prev => {
-            const updated = [...prev];
-            updated[updated.length - 1] = {
-              sender: 'assistant',
-              text: fullText
-            };
-            return updated;
-          });
-        }
-      }
+      const data = await res.json();
+      await streamAssistantMessage(data.response);
     } catch (err) {
-      console.error('streaming error:', err);
-      setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
+      setMessages(prev => [
+        ...prev.slice(0, -1),
+        { sender: 'assistant', text: '⚠️ something went wrong. try again!' }
+      ]);
     } finally {
       setIsTyping(false);
     }
@@ -91,40 +63,61 @@ const ChatBox = () => {
     if (e.key === 'Enter') sendMessage();
   };
 
+  const renderMessage = (msg, i) => {
+    const isUser = msg.sender === 'user';
+    return (
+      <div key={i} style={{
+        alignSelf: isUser ? 'flex-end' : 'flex-start',
+        backgroundColor: isUser ? '#444' : '#222',
+        color: '#fff',
+        padding: '10px 14px',
+        borderRadius: '18px',
+        margin: '6px 0',
+        maxWidth: '80%',
+        whiteSpace: 'pre-wrap',
+        fontSize: '15px',
+        lineHeight: '1.4'
+      }}>
+        <strong>{isUser ? 'you' : 'govies'}:</strong> {msg.text}
+      </div>
+    );
+  };
+
   return (
     <div style={{
+      backgroundColor: '#000',
+      color: '#fff',
+      minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      height: '100vh',
-      maxWidth: '600px',
-      margin: '0 auto',
-      padding: '20px',
       fontFamily: 'Arial, sans-serif'
     }}>
       <div style={{
+        backgroundColor: '#179942',
+        padding: '14px 20px',
+        fontWeight: 'bold',
+        fontSize: '16px'
+      }}>
+        govies.com team
+      </div>
+
+      <div style={{
         flex: 1,
+        padding: '20px',
         overflowY: 'auto',
-        marginBottom: '10px',
         display: 'flex',
         flexDirection: 'column'
       }}>
         {messages.map(renderMessage)}
-        {isTyping && (
-          <div style={{
-            alignSelf: 'flex-start',
-            padding: '10px',
-            backgroundColor: '#444',
-            borderRadius: '10px',
-            margin: '5px',
-            maxWidth: '80%',
-            fontStyle: 'italic',
-            color: '#ccc'
-          }}>
-            typing...
-          </div>
-        )}
+        <div ref={messagesEndRef} />
       </div>
-      <div style={{ display: 'flex' }}>
+
+      <div style={{
+        display: 'flex',
+        borderTop: '1px solid #333',
+        padding: '10px',
+        backgroundColor: '#111'
+      }}>
         <input
           type="text"
           value={input}
@@ -133,19 +126,22 @@ const ChatBox = () => {
           placeholder="Type your message..."
           style={{
             flex: 1,
-            padding: '10px',
+            backgroundColor: '#222',
+            color: '#fff',
+            border: '1px solid #333',
             borderRadius: '5px',
-            border: '1px solid #ccc'
+            padding: '10px'
           }}
         />
         <button
           onClick={sendMessage}
           style={{
-            marginLeft: '10px',
-            padding: '10px',
             backgroundColor: '#179942',
-            color: 'white',
             border: 'none',
+            padding: '10px 16px',
+            marginLeft: '10px',
+            color: 'white',
+            fontWeight: 'bold',
             borderRadius: '5px',
             cursor: 'pointer'
           }}
