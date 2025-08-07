@@ -1,24 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './ChatBox.css';
 import avatar from '../public/govies-avatar.png';
 
-const ChatBox = () => {
+export default function ChatBox() {
   const [messages, setMessages] = useState([
     {
-      sender: 'bot',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
+      sender: 'assistant',
+      text: 'hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!',
     },
   ]);
   const [input, setInput] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const chatEndRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(true);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isOpen]);
+  }, [messages, isTyping]);
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -28,83 +28,77 @@ const ChatBox = () => {
     setIsTyping(true);
 
     try {
-      const res = await fetch('https://zero8062025.onrender.com/chat', {
+      const response = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: input }),
       });
 
-      const data = await res.json();
-      const delay = Math.max(3000, data.text.length * 15);
+      const data = await response.json();
+      const assistantMessage = { sender: 'assistant', text: data.response };
       setTimeout(() => {
-        setMessages((prev) => [...prev, { sender: 'bot', text: data.text }]);
+        setMessages((prev) => [...prev, assistantMessage]);
         setIsTyping(false);
-      }, delay);
+      }, 3000); // min 3 sec delay
     } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'bot', text: "sorry, something went wrong." },
-      ]);
+      console.error('Error:', err);
       setIsTyping(false);
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter') handleSend();
   };
 
-  const toggleChat = () => setIsOpen(!isOpen);
   const clearChat = () => {
     setMessages([
       {
-        sender: 'bot',
-        text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
+        sender: 'assistant',
+        text: 'hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!',
       },
     ]);
     setInput('');
   };
 
+  if (!isOpen) return (
+    <button className="chat-toggle" onClick={() => setIsOpen(true)}>💬</button>
+  );
+
   return (
     <div className="chat-widget">
-      {isOpen ? (
-        <div className="chat-box">
-          <div className="chat-header">
-            <div className="header-left">
-              <img src={avatar} alt="govies avatar" className="chat-avatar" />
-              <span className="chat-title">govies.com team</span>
-            </div>
-            <div className="header-right">
-              <button onClick={clearChat}>⟲</button>
-              <button onClick={toggleChat}>✕</button>
-            </div>
+      <div className="chat-header">
+        <img src={avatar} alt="avatar" className="avatar" />
+        <span className="chat-title">govies.com team</span>
+        <button className="chat-btn" onClick={clearChat}>⟲</button>
+        <button className="chat-btn" onClick={() => setIsOpen(false)}>✕</button>
+      </div>
+      <div className="chat-body">
+        {messages.map((msg, idx) => (
+          <div key={idx} className={`chat-message ${msg.sender}`}>
+            {msg.sender === 'assistant' && (
+              <img src={avatar} alt="avatar" className="avatar" />
+            )}
+            <div className="chat-bubble">{msg.text}</div>
           </div>
-          <div className="chat-messages">
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`chat-message ${msg.sender}`}>
-                {msg.text}
-              </div>
-            ))}
-            {isTyping && <div className="typing-indicator">typing...</div>}
-            <div ref={chatEndRef} />
+        ))}
+        {isTyping && (
+          <div className="chat-message assistant">
+            <img src={avatar} alt="avatar" className="avatar" />
+            <div className="chat-bubble typing">typing...</div>
           </div>
-          <div className="chat-input">
-            <input
-              type="text"
-              placeholder="Type your question..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-            />
-            <button onClick={handleSend}>Send</button>
-          </div>
-        </div>
-      ) : (
-        <button className="chat-toggle" onClick={toggleChat}>
-          💬
-        </button>
-      )}
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+      <div className="chat-input">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyPress}
+          placeholder="Type your question..."
+        />
+        <button onClick={handleSend}>Send</button>
+      </div>
     </div>
   );
-};
-
-export default ChatBox;
+}
