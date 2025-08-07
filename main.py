@@ -15,7 +15,7 @@ app.add_middleware(
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-assistant_id = "asst_XXXXXXXXXXXXXXX"  # Replace with your real assistant ID
+assistant_id = "asst_LBHxsIUjpmOospLal5LOKo8L"  # Replace with your real assistant ID
 
 # Quote flow memory
 user_states = {}
