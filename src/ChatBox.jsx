@@ -4,7 +4,7 @@ const ChatBox = () => {
   const [messages, setMessages] = useState([
     {
       sender: 'assistant',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!"
+      text: "👋 hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!"
     }
   ]);
   const [input, setInput] = useState('');
@@ -12,41 +12,79 @@ const ChatBox = () => {
 
   const renderMessage = (msg, i) => {
     const isUser = msg.sender === 'user';
+
+    // Bold section headers
+    const formattedText = msg.text
+      .replace(/(\*\*box [a-g][^*]*\*\*)/gi, '<strong>$1</strong>')
+      .replace(/(\*\*calculating cash to close\*\*)/gi, '<strong>$1</strong>')
+      .replace(/\n\n/g, '<br/><br/>');
+
     return (
-      <div key={i} style={{
-        alignSelf: isUser ? 'flex-end' : 'flex-start',
-        backgroundColor: isUser ? '#DCF8C6' : '#FFF',
-        color: '#000',
-        padding: '10px',
-        borderRadius: '10px',
-        margin: '5px',
-        maxWidth: '80%',
-        whiteSpace: 'pre-wrap',
-        fontWeight: /box [a-g]/i.test(msg.text) || /cash to close/i.test(msg.text) ? 'bold' : 'normal'
-      }}>
-        <strong>{isUser ? 'You' : 'Govies'}:</strong> {msg.text}
-      </div>
+      <div
+        key={i}
+        style={{
+          alignSelf: isUser ? 'flex-end' : 'flex-start',
+          backgroundColor: isUser ? '#444' : '#222',
+          color: '#fff',
+          padding: '10px',
+          borderRadius: '10px',
+          margin: '5px',
+          maxWidth: '80%',
+          whiteSpace: 'pre-wrap'
+        }}
+        dangerouslySetInnerHTML={{
+          __html: `<strong>${isUser ? 'you' : 'govies'}:</strong> ${formattedText}`
+        }}
+      />
     );
   };
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     const userMessage = { sender: 'user', text: input };
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
+    const assistantMessage = { sender: 'assistant', text: '' };
+    setMessages(prev => [...prev, assistantMessage]);
+
     try {
       const res = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input }),
       });
 
-      const data = await res.json();
-      const assistantMessage = { sender: 'assistant', text: data.response };
-      setMessages(prev => [...prev, assistantMessage]);
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let done = false;
+      let currentText = '';
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: true });
+          currentText += chunk;
+
+          setMessages(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              sender: 'assistant',
+              text: currentText,
+            };
+            return updated;
+          });
+        }
+      }
     } catch (err) {
+      console.error('Error:', err);
       setMessages(prev => [...prev, { sender: 'assistant', text: '⚠️ something went wrong. try again!' }]);
     } finally {
       setIsTyping(false);
@@ -71,34 +109,3 @@ const ChatBox = () => {
         {messages.map(renderMessage)}
         {isTyping && (
           <div style={{
-            alignSelf: 'flex-start',
-            padding: '10px',
-            backgroundColor: '#FFF',
-            borderRadius: '10px',
-            margin: '5px',
-            maxWidth: '80%',
-            fontStyle: 'italic',
-            opacity: 0.6
-          }}>
-            Govies is typing...
-          </div>
-        )}
-      </div>
-      <div style={{ display: 'flex' }}>
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Type your message..."
-          style={{ flex: 1, padding: '10px', borderRadius: '5px' }}
-        />
-        <button onClick={sendMessage} style={{ marginLeft: '10px', padding: '10px' }}>
-          Send
-        </button>
-      </div>
-    </div>
-  );
-};
-
-export default ChatBox;
