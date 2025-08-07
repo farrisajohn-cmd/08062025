@@ -126,7 +126,7 @@
 
       appendTyping();
 
-      const res = await fetch("https://<RENDER-BACKEND-URL>/chat", {
+      const res = await fetch("https://govies-chatbot.onrender.com/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, user_id: "default_user" })
