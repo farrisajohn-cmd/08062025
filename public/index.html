@@ -1,188 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>govies.com chat</title>
+  <meta charset="UTF-8">
+  <title>govies.com chatbot</title>
   <style>
     body {
       margin: 0;
+      background: #111;
       font-family: 'Segoe UI', sans-serif;
-      background-color: #111;
-      color: #fff;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      height: 100vh;
-      padding: 2rem;
-    }
-
-    #chat-container {
-      width: 100%;
-      max-width: 420px;
-      background-color: #000;
-      border-radius: 10px;
-      padding: 1rem;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    }
-
-    .chat-bubble {
-      margin: 0.4rem 0;
-      padding: 0.75rem 1rem;
-      border-radius: 12px;
-      max-width: 100%;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      line-height: 1.4;
-    }
-
-    .user {
-      background-color: #333;
-      align-self: flex-end;
-      border-bottom-right-radius: 0;
-      text-align: right;
-    }
-
-    .assistant {
-      background-color: #1f1f1f;
-      align-self: flex-start;
-      border-bottom-left-radius: 0;
-    }
-
-    #messages {
-      display: flex;
-      flex-direction: column;
-      overflow-y: auto;
-      max-height: 75vh;
-      margin-bottom: 1rem;
-    }
-
-    #input-container {
-      display: flex;
-    }
-
-    #message-input {
-      flex-grow: 1;
-      padding: 0.7rem;
-      font-size: 1rem;
-      border-radius: 6px 0 0 6px;
-      border: none;
-      outline: none;
-    }
-
-    #send-button {
-      padding: 0.7rem 1rem;
-      background-color: #179942;
-      border: none;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer;
       color: white;
     }
 
-    .thinking {
-      font-style: italic;
-      opacity: 0.6;
-      margin: 0.4rem 0;
+    #chatbox {
+      max-width: 500px;
+      margin: 50px auto;
+      background: #000;
+      border-radius: 15px;
+      box-shadow: 0 0 20px #000;
+      overflow: hidden;
+      padding: 0;
     }
 
-    a {
-      color: #4cc76c;
-    }
-
-    strong {
+    #header {
+      background: #179942;
+      padding: 15px;
       font-weight: bold;
+      font-size: 18px;
+    }
+
+    #messages {
+      padding: 20px;
+      height: 500px;
+      overflow-y: scroll;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 15px;
+      white-space: pre-wrap;
+    }
+
+    .user {
+      background: #333;
+      align-self: flex-end;
+    }
+
+    .assistant {
+      background: #222;
+      align-self: flex-start;
+    }
+
+    .typing {
+      font-style: italic;
+      color: #888;
+    }
+
+    #input-area {
+      display: flex;
+      background: #000;
+      padding: 10px;
+    }
+
+    #input-area input {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    #input-area button {
+      background: #179942;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <div id="chat-container">
-    <div id="messages"></div>
-    <div id="input-container">
-      <input type="text" id="message-input" placeholder="Message..." />
-      <button id="send-button">➤</button>
+  <div id="chatbox">
+    <div id="header">🟢 govies.com team</div>
+    <div id="messages">
+      <div class="message assistant">👋 hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!</div>
+    </div>
+    <div id="input-area">
+      <input type="text" id="user-input" placeholder="Message..." />
+      <button onclick="sendMessage()">➤</button>
     </div>
   </div>
 
   <script>
-    const input = document.getElementById('message-input');
-    const button = document.getElementById('send-button');
-    const messages = document.getElementById('messages');
+    const messagesDiv = document.getElementById("messages");
 
-    function appendMessage(role, text) {
-      const div = document.createElement('div');
-      div.classList.add('chat-bubble', role);
-      div.innerHTML = text;
-      messages.appendChild(div);
-      messages.scrollTop = messages.scrollHeight;
+    function appendMessage(role, content) {
+      const div = document.createElement("div");
+      div.classList.add("message", role);
+      div.innerText = content;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    function appendThinking() {
-      const think = document.createElement('div');
-      think.classList.add('chat-bubble', 'assistant', 'thinking');
-      think.textContent = 'typing...';
-      think.id = 'thinking';
-      messages.appendChild(think);
-      messages.scrollTop = messages.scrollHeight;
+    function appendTyping() {
+      const div = document.createElement("div");
+      div.id = "typing";
+      div.classList.add("message", "assistant", "typing");
+      div.innerText = "typing...";
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    function removeThinking() {
-      const think = document.getElementById('thinking');
-      if (think) think.remove();
+    function removeTyping() {
+      const typingDiv = document.getElementById("typing");
+      if (typingDiv) typingDiv.remove();
     }
 
     async function sendMessage() {
-      const message = input.value.trim();
+      const input = document.getElementById("user-input");
+      const message = input.value;
       if (!message) return;
+      appendMessage("user", message);
+      input.value = "";
 
-      appendMessage('user', message);
-      input.value = '';
+      appendTyping();
 
-      appendThinking();
-
-      const res = await fetch('/chat', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ message })
+      const res = await fetch("https://<RENDER-BACKEND-URL>/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, user_id: "default_user" })
       });
 
       const data = await res.json();
-      removeThinking();
-      await typeReply(data.response);
+      removeTyping();
+      appendMessage("assistant", data.response);
     }
-
-    async function typeReply(text) {
-      const bubble = document.createElement('div');
-      bubble.classList.add('chat-bubble', 'assistant');
-      messages.appendChild(bubble);
-      messages.scrollTop = messages.scrollHeight;
-
-      let i = 0;
-      function type() {
-        if (i <= text.length) {
-          bubble.innerHTML = text.substring(0, i).replace(/\n/g, "<br>");
-          messages.scrollTop = messages.scrollHeight;
-          i++;
-          setTimeout(type, 5); // adjust speed here
-        }
-      }
-      type();
-    }
-
-    button.onclick = sendMessage;
-    input.addEventListener("keypress", function (e) {
-      if (e.key === "Enter") sendMessage();
-    });
-
-    // Auto greet
-    window.onload = () => {
-      fetch("/chat", {
-        method: "POST",
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ message: "hello" })
-      })
-      .then(res => res.json())
-      .then(data => typeReply(data.response));
-    };
   </script>
 </body>
 </html>
