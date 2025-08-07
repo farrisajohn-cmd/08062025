@@ -1,32 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatBox.css';
+import avatar from './govies-avatar.png';
 
-const ChatBox = () => {
+export default function ChatBox() {
   const [messages, setMessages] = useState([
     {
       sender: 'bot',
-      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
+      text: 'hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!',
     },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const avatar = '/govies-avatar.png'; // public folder path
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSend = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     if (!input.trim()) return;
 
     const userMessage = { sender: 'user', text: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
@@ -37,72 +37,51 @@ const ChatBox = () => {
     });
 
     const data = await response.json();
-    const botMessage = { sender: 'bot', text: data.response };
-    
+
     setTimeout(() => {
-      setMessages(prev => [...prev, botMessage]);
+      setMessages((prev) => [...prev, { sender: 'bot', text: data.response }]);
       setIsTyping(false);
-    }, 3000);
-  };
-
-  const handleKeyPress = e => {
-    if (e.key === 'Enter') handleSend();
-  };
-
-  const clearChat = () => {
-    setMessages([
-      {
-        sender: 'bot',
-        text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
-      },
-    ]);
+    }, 3000); // always wait 3 seconds minimum
   };
 
   return (
     <div className="chatbox-container">
       <div className="chatbox-header">
-        <div className="header-left">
-          <img src={avatar} alt="govies.com team" className="chatbot-avatar" />
-          <span className="chatbot-name">govies.com team</span>
-        </div>
-        <div className="header-right">
-          <button onClick={clearChat} className="chatbox-icon">⟲</button>
-          <button className="chatbox-icon">✕</button>
+        <img src={avatar} alt="govies.com team" className="chatbox-avatar" />
+        <span className="chatbox-title">govies.com team</span>
+        <div className="chatbox-buttons">
+          <button onClick={() => window.location.reload()}>⟲</button>
+          <button onClick={() => document.querySelector('.chatbox-container').style.display = 'none'}>✕</button>
         </div>
       </div>
 
       <div className="chatbox-messages">
         {messages.map((msg, index) => (
-          <div key={index} className={`message ${msg.sender}`}>
-            {msg.sender === 'bot' && (
-              <img src={avatar} alt="bot" className="avatar" />
-            )}
-            <div className="message-text">{msg.text}</div>
+          <div key={index} className={`chatbox-message ${msg.sender}`}>
+            {msg.sender === 'bot' && <img src={avatar} className="chatbox-avatar-small" alt="bot" />}
+            <div className="chatbox-bubble">{msg.text}</div>
           </div>
         ))}
-
         {isTyping && (
-          <div className="message bot">
-            <img src={avatar} alt="bot" className="avatar" />
-            <div className="message-text">typing...</div>
+          <div className="chatbox-message bot">
+            <img src={avatar} className="chatbox-avatar-small" alt="bot" />
+            <div className="chatbox-bubble typing">
+              <span className="dot"></span><span className="dot"></span><span className="dot"></span>
+            </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="chatbox-input">
+      <form onSubmit={handleSubmit} className="chatbox-input-area">
         <input
           type="text"
           placeholder="Type your question..."
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyPress={handleKeyPress}
+          onChange={(e) => setInput(e.target.value)}
         />
-        <button onClick={handleSend}>Send</button>
-      </div>
+        <button type="submit">Send</button>
+      </form>
     </div>
   );
-};
-
-export default ChatBox;
+}
