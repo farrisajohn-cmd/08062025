@@ -1,146 +1,158 @@
-.chat-launcher {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  background: #fff;
-  border-radius: 50%;
-  padding: 5px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 999;
-  cursor: pointer;
-}
-
-.launcher-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-}
+/* ChatBox.css */
 
 .chatbox-container {
   position: fixed;
-  bottom: 90px;
+  bottom: 20px;
   right: 20px;
-  width: 360px;
-  max-height: 600px;
-  background-color: #f9f9f9;
-  border-radius: 15px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  height: 600px;
+  background-color: #f2f2f2;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  z-index: 1000;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', sans-serif;
+  z-index: 9999;
 }
 
 .chatbox-header {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
   background-color: #179942;
   color: #fff;
+  padding: 12px;
   font-weight: bold;
   font-size: 16px;
+  text-align: center;
 }
 
-.header-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.header-title {
+.chatbox-messages {
   flex: 1;
-}
-
-.chatbox-body {
-  flex: 1;
-  padding: 10px;
   overflow-y: auto;
-  background-color: #fff;
+  padding: 12px;
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  background-color: #ffffff;
 }
 
-.chat-bubble {
-  padding: 10px 14px;
-  margin: 6px 0;
-  max-width: 85%;
-  border-radius: 15px;
-  white-space: pre-wrap;
-  line-height: 1.4;
+.chatbox-message {
+  display: flex;
+  align-items: flex-start;
+  max-width: 90%;
 }
 
-.assistant-bubble {
-  align-self: flex-start;
-  background-color: #e0f7e9;
-  color: #000;
-}
-
-.user-bubble {
+.chatbox-message.user {
   align-self: flex-end;
-  background-color: #eee;
+  flex-direction: row-reverse;
+}
+
+.chatbox-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  margin: 0 8px;
+  object-fit: cover;
+}
+
+.chatbox-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.chatbox-message.user .chatbox-bubble {
+  background-color: #e5e5ea;
   color: #000;
+}
+
+.chatbox-message.assistant .chatbox-bubble {
+  background-color: #179942;
+  color: #fff;
+}
+
+.chatbox-name {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #555;
+}
+
+.chatbox-input-container {
+  display: flex;
+  padding: 10px;
+  border-top: 1px solid #ccc;
+  background-color: #fafafa;
 }
 
 .chatbox-input {
-  display: flex;
-  padding: 10px;
-  border-top: 1px solid #ddd;
-  background-color: #f6f6f6;
-}
-
-.chatbox-input input {
   flex: 1;
   padding: 10px;
-  border: 1px solid #ccc;
   border-radius: 8px;
-  outline: none;
+  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
-.chatbox-input button {
-  margin-left: 10px;
+.chatbox-send-btn {
+  margin-left: 8px;
+  padding: 10px 16px;
   background-color: #179942;
-  color: white;
+  color: #fff;
   border: none;
-  padding: 10px 14px;
   border-radius: 8px;
   cursor: pointer;
   font-weight: bold;
+  font-size: 14px;
+}
+
+.chatbox-send-btn:hover {
+  background-color: #138434;
 }
 
 .typing-indicator {
   display: flex;
   align-items: center;
-  margin: 6px 0 0 4px;
   gap: 4px;
-  align-self: flex-start;
+  margin-left: 44px;
+  padding: 10px;
+  background-color: #f1f1f1;
+  border-radius: 16px;
+  width: fit-content;
+  animation: fadeIn 0.3s ease-in-out;
 }
 
 .typing-indicator span {
-  display: block;
-  width: 8px;
-  height: 8px;
-  background: #ccc;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background-color: #888;
   border-radius: 50%;
-  animation: typing 1.2s infinite ease-in-out;
+  animation: typing 1.5s infinite ease-in-out;
 }
 
 .typing-indicator span:nth-child(2) {
   animation-delay: 0.2s;
 }
-
 .typing-indicator span:nth-child(3) {
   animation-delay: 0.4s;
 }
 
 @keyframes typing {
   0%, 80%, 100% {
-    transform: scale(0.8);
+    transform: scale(0.6);
     opacity: 0.3;
   }
   40% {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
