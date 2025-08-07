@@ -12,12 +12,12 @@ const ChatBox = () => {
     setInput('');
 
     try {
-      const res = await fetch('https://zero08062025.onrender.com/chat', {
+      const res = await fetch('https://zero8062025.onrender.com/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: input })
+        body: JSON.stringify({ message: input }),
       });
 
       if (!res.ok) throw new Error('Response not OK');
