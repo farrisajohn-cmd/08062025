@@ -1,86 +1,120 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChatBox.css';
 
-export default function ChatBox() {
+const ChatBox = () => {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
-      sender: 'bot',
-      text: 'hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!',
+      sender: 'assistant',
+      text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
     },
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef(null);
+  const bottomRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const sendMessage = async () => {
     if (!input.trim()) return;
-
-    const userMessage = { sender: 'user', text: input };
-    setMessages((prev) => [...prev, userMessage]);
+    const userMsg = { sender: 'user', text: input };
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
-    const response = await fetch('https://zero8062025.onrender.com/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: input }),
-    });
-
-    const data = await response.json();
-
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { sender: 'bot', text: data.response }]);
+    setTimeout(async () => {
+      const response = await getBotReply(input);
+      setMessages((prev) => [...prev, { sender: 'assistant', text: response }]);
       setIsTyping(false);
-    }, 3000); // always wait 3 seconds minimum
+    }, 3000); // 3-second delay
   };
 
-  return (
-    <div className="chatbox-container">
-      <div className="chatbox-header">
-        <img src="/govies-avatar.png" alt="govies.com team" className="chatbox-avatar" />
-        <span className="chatbox-title">govies.com team</span>
-        <div className="chatbox-buttons">
-          <button onClick={() => window.location.reload()}>⟲</button>
-          <button onClick={() => document.querySelector('.chatbox-container').style.display = 'none'}>✕</button>
-        </div>
-      </div>
+  const getBotReply = async (msg) => {
+    try {
+      const response = await fetch('https://zero8062025.onrender.com/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: msg }),
+      });
 
-      <div className="chatbox-messages">
-        {messages.map((msg, index) => (
-          <div key={index} className={`chatbox-message ${msg.sender}`}>
-            {msg.sender === 'bot' && <img src="/govies-avatar.png" className="chatbox-avatar-small" alt="bot" />}
-            <div className="chatbox-bubble">{msg.text}</div>
-          </div>
-        ))}
-        {isTyping && (
-          <div className="chatbox-message bot">
-            <img src="/govies-avatar.png" className="chatbox-avatar-small" alt="bot" />
-            <div className="chatbox-bubble typing">
-              <span className="dot"></span><span className="dot"></span><span className="dot"></span>
+      const data = await response.json();
+      return data.reply || 'sorry, something went wrong.';
+    } catch (err) {
+      console.error('backend error:', err);
+      return 'sorry, i had trouble reaching the server.';
+    }
+  };
+
+  const clearChat = () => {
+    setMessages([
+      {
+        sender: 'assistant',
+        text: "hey! welcome to govies.com — i’m your FHA expert on call. ready to quote rates, explain payments, or show you what your loan would look like. just tell me what you need!",
+      },
+    ]);
+  };
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  return (
+    <div className="chatbot-container">
+      {!isOpen && (
+        <button className="chatbot-toggle" onClick={() => setIsOpen(true)}>
+          💬
+        </button>
+      )}
+
+      {isOpen && (
+        <div className="chatbox">
+          <div className="chatbox-header">
+            <span>govies.com team</span>
+            <div className="chatbox-buttons">
+              <button onClick={clearChat}>⟲</button>
+              <button onClick={() => setIsOpen(false)}>✕</button>
             </div>
           </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
 
-      <form onSubmit={handleSubmit} className="chatbox-input-area">
-        <input
-          type="text"
-          placeholder="Type your question..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-        />
-        <button type="submit">Send</button>
-      </form>
+          <div className="chatbox-body">
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`chat-bubble ${msg.sender === 'user' ? 'user' : 'assistant'}`}
+              >
+                {msg.text.split('\n').map((line, i) => (
+                  <div
+                    key={i}
+                    dangerouslySetInnerHTML={{
+                      __html: line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>'),
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
+            {isTyping && (
+              <div className="typing">
+                govies.com team is typing<span className="dot">.</span>
+                <span className="dot">.</span>
+                <span className="dot">.</span>
+              </div>
+            )}
+            <div ref={bottomRef}></div>
+          </div>
+
+          <div className="chatbox-input">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="type your message..."
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            />
+            <button onClick={sendMessage}>➤</button>
+          </div>
+        </div>
+      )}
     </div>
   );
-}
+};
+
+export default ChatBox;
